@@ -6,6 +6,44 @@ class Card:
     def __init__(self,text,action):
         self.text=text
         self.action=action
+    def doAction(self,player):
+        if self.action[0]=="+":
+            player.cash+=int(self.action[1:])
+        elif self.action[0]=="-":
+            player.cash+=int(self.action[1:])
+        elif self.action[0]=="e":
+            for p in board.players:
+                p.cash-=int(self.action[1:])   
+            player.cash+=(int(self.action[1:]) *(len(board.players)+1))      
+        elif self.action=="go":
+            player.position=1
+            player.cash+=200
+        elif self.action=="jail":
+            player.position=11
+            player.inJail=True
+        elif self.action=="outJail":
+            player.inJail=False
+            player.getOutOfJailCard=True
+        elif self.action=="IllinoisAve":
+            player.position=25
+        elif self.action=="nearestUtil":
+            if player.position<13 or player.position>29:
+                player.position=13
+            else:
+                player.position=29
+        elif self.action=="StCharles":
+            player.position=12
+        elif self.action=="back3":
+            player.position-=3
+        elif self.action=="nearestRailRoad":
+            if player.positon>36 or player.position<6:
+                player.position=6
+            elif player.position>6 or player.positon <16:
+                player.positon=16
+            elif player.positon>16 or player.position < 26:
+                player.positon = 26
+            else:
+                player.positon=36
 class Board:
     def __init__(self):
         self.board=[]
@@ -14,22 +52,40 @@ class Board:
         self.players=[]
         self.unpackProperties()
         self.initBoard()
-        
+        self.chanceCards=[]
+        self.chanceCardsUsed=[]
+        self.communityCards=[]
+        self.communityCardsUsed=[]
+        self.unpackCards()
     def unpackProperties(self):
         propertiesTXT=open("Properties.txt","r")
         propertiesLines=propertiesTXT.readlines()
         for x in range(0,len(propertiesLines),5):
-            self.properties.append(Property(propertiesLines[x], int(propertiesLines[x+1]), propertiesLines[x+2], propertiesLines[x+3], propertiesLines[x+4]))
-       
+            self.properties.append(Property(propertiesLines[x].rstrip("\n"), int(propertiesLines[x+1]), propertiesLines[x+2], propertiesLines[x+3], propertiesLines[x+4]))
+        self.properties.append(Property("Go",1,"NA","NA","NA"))
+        self.properties.append(Property("Income Tax",5,"NA","NA","NA"))
         for p in self.properties:
             self.propertiesDict[p.position]=p
+    def unpackCards(self):
+        chanceCardsTXT=open("ChanceCards.txt","r")
+        chanceLines=chanceCardsTXT.readlines()
+        for line in chanceLines:
+            self.chanceCards.append(Card(line.split(":")[0],line.split(":")[1]))
+        random.shuffle(self.chanceCards)
+        communityCardsTXT=open("CommunityChestCards.txt","r")
+        communityLines=communityCardsTXT.readlines()
+        for line in communityLines:
+            self.communityCards.append(Card(line.split(":")[0],line.split(":")[1]))
+        random.shuffle(self.chanceCards)
+        
+         
     def printBoard(self):
         for row in self.board:
             print self.colorRow(row)
-        print "Position:Name"
+        print "Position:Name\n-----------------------"
         for player in self.players:
-            info=str(player.position)+":"+str(player.name[:])
-            print info
+            info=str(self.propertiesDict[player.position].name)+"["+str(player.position)+"]:"+str(player.name[:])
+            print info+"\n-----------------------"
     def initBoard(self):
         self.board.append(["[11]","[12]","[13]","[14]","[15]","[16]","[17]","[18]","[19]","[20]","[21]"])
         self.board.append(["[10]","    ","    ","    ","    ","    ","    ","    ","    ","    ","[22]"])
@@ -114,6 +170,7 @@ class Player:
         self.turnComplete=False
         self.hasMoved=False
         self.lastRoll=[]
+        self.getOutOfJailCard=False
     def presentOptions(self):
         board.printBoard()
         print "Your turn,"+self.name
@@ -152,7 +209,7 @@ class Player:
                 elif(choice==6):
                     if self.hasMoved==True:
                         self.turnComplete=True  
-                        self.hasMoved==False
+                        self.hasMoved=False
                         clear()
                 else:
                     pass
@@ -168,8 +225,28 @@ class Player:
         self.position+=sum(diceRoll)
         self.position=self.position % 40
         self.hasMoved=True
+        if self.position in [3,18,34]:
+            print board.communityCards[0].text
+            board.communityCardsUsed.append(board.communityCardsUsed[0])
+            board.communityCards.remove(board.communityCardsUsed[0])
+        if self.position in [8,23,37]:#chance
+            print board.chanceCards[0].text
+            board.chanceCardsUsed.append(board.chanceCards[0])
+            board.chanceCards.remove(board.chanceCards[0])
+        if self.position==5:
+            clear()
+            print "You owe the bank 200 dollars."
+            print raw_input("Press enter to continue\n->")
+            clear()
+        if board.propertiesDict[self.position].owner!=(self or "None"):
+            clear()
+            print "You owe rent : "+board.propertiesDict[self.position].rent
+            
+            print raw_input("Press enter to continue\n->")
     def buyProperty(self):
         try:
+            if board.propertiesDict[self.position].price=="NA":
+                raise KeyError
             if board.propertiesDict[self.position].owner=="None":
                 print board.propertiesDict[self.position].name
                 print "Position: "+str(board.propertiesDict[self.position].position)
@@ -187,10 +264,10 @@ class Player:
                     else:
                         print "Sorry, you do not have the funds"
                 
-            elif board.propertiesDict[self.position].owner==self.name:
+            elif board.propertiesDict[self.position].owner==self:
                 print "You own this property!"
             else:
-                print "This property is owned by:"+board.propertiesDict[self.position].owner
+                print "This property is owned by:"+board.propertiesDict[self.position].owner.name
         except KeyError:
             print "Sorry, you can not purchase this spot."        
 def clear():
