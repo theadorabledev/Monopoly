@@ -64,6 +64,10 @@ class Board:
             self.properties.append(Property(propertiesLines[x].rstrip("\n"), int(propertiesLines[x+1]), propertiesLines[x+2], propertiesLines[x+3], propertiesLines[x+4]))
         self.properties.append(Property("Go",1,"NA","NA","NA"))
         self.properties.append(Property("Income Tax",5,"NA","NA","NA"))
+        self.properties.append(Property("Jail",11,"NA","NA","NA"))
+        self.properties.append(Property("Free Parking",21,"NA","NA","NA"))
+        self.properties.append(Property("Go To Jail",31,"NA","NA","NA"))
+        self.properties.append(Property("Luxury Tax",39,"NA","NA","NA"))
         for p in self.properties:
             self.propertiesDict[p.position]=p
     def unpackCards(self):
@@ -171,6 +175,8 @@ class Player:
         self.hasMoved=False
         self.lastRoll=[]
         self.getOutOfJailCard=False
+        self.inJail=False
+        self.turnsInJail=0
     def presentOptions(self):
         board.printBoard()
         print "Your turn,"+self.name
@@ -205,7 +211,20 @@ class Player:
                 elif(choice==4):
                     pass
                 elif(choice==5):
-                    pass
+                    clear()
+                    for position in board.propertiesDict:
+                        print "Position: "+str(board.propertiesDict[position].position)
+                        print "Name: "+board.propertiesDict[position].name
+                        print "Price: "+board.propertiesDict[position].price
+                        print "Rent: "+board.propertiesDict[position].rent
+                        print "Group: "+board.propertiesDict[position].group
+                        if board.propertiesDict[position].owner==("None" or "NA"):
+                            print "Owner: "+ board.propertiesDict[position].owner
+                        else:
+                            print "Owner: "+ board.propertiesDict[position].owner.name
+                        print "----------------------------"
+                    raw_input("Press enter to continue\n->")
+                    clear()
                 elif(choice==6):
                     if self.hasMoved==True:
                         self.turnComplete=True  
@@ -219,7 +238,7 @@ class Player:
                 break
     def rollDice(self):
         self.lastRoll=[random.randint(1, 6),random.randint(1, 6)]
-        return self.lastRoll
+        return [8]#self.lastRoll
     def move(self,diceRoll):
         print "You rolled: "+str(diceRoll)
         self.position+=sum(diceRoll)
@@ -229,19 +248,26 @@ class Player:
             print board.communityCards[0].text
             board.communityCardsUsed.append(board.communityCardsUsed[0])
             board.communityCards.remove(board.communityCardsUsed[0])
-        if self.position in [8,23,37]:#chance
+        elif self.position in [8,23,37]:#chance
             print board.chanceCards[0].text
             board.chanceCardsUsed.append(board.chanceCards[0])
             board.chanceCards.remove(board.chanceCards[0])
-        if self.position==5:
+        elif self.position==(5 or 39):
             clear()
             print "You owe the bank 200 dollars."
             print raw_input("Press enter to continue\n->")
             clear()
-        if board.propertiesDict[self.position].owner!=(self or "None"):
+        elif board.propertiesDict[self.position].owner!=(self and "None"):
             clear()
+            print board.propertiesDict[self.position].owner
             print "You owe rent : "+board.propertiesDict[self.position].rent
-            
+            print raw_input("Press enter to continue\n->")
+        elif self.position==31:
+            clear()
+            print "You landed on Go To Jail, take a guess what happens next?"
+            self.position=11
+            self.inJail=True
+            self.turnsInJail=3
             print raw_input("Press enter to continue\n->")
     def buyProperty(self):
         try:
@@ -258,7 +284,7 @@ class Player:
             
                 if purchase[0].upper()=="Y":
                     if int(self.cash)>int(board.propertiesDict[self.position].price):
-                        board.propertiesDict[self.position].owner=self.name
+                        board.propertiesDict[self.position].owner=self
                         self.properties.append(board.propertiesDict[self.position].name)
                         self.cash-=int(board.propertiesDict[self.position].price)
                     else:
