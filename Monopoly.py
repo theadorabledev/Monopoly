@@ -61,7 +61,7 @@ class Board:
         propertiesTXT=open("Properties.txt","r")
         propertiesLines=propertiesTXT.readlines()
         for x in range(0,len(propertiesLines),5):
-            self.properties.append(Property(propertiesLines[x].rstrip("\n"), int(propertiesLines[x+1]), propertiesLines[x+2], propertiesLines[x+3], propertiesLines[x+4]))
+            self.properties.append(Property(propertiesLines[x].rstrip("\n"), int(propertiesLines[x+1]), propertiesLines[x+2][:-1], propertiesLines[x+3][:-1], propertiesLines[x+4]))
         self.properties.append(Property("Go",1,"NA","NA","NA"))
         self.properties.append(Property("Income Tax",5,"NA","NA","NA"))
         self.properties.append(Property("Jail",11,"NA","NA","NA"))
@@ -154,11 +154,11 @@ class Board:
 
 class Property:
     def __init__(self,name,position,price,rent,group):
-        self.name=name
-        self.position=position
+        self.name=name.rstrip("\n").rstrip("\r")
+        self.position=int(position)
         self.price=price
         self.rent=rent
-        self.group=group
+        self.group=group[:-1]
         self.owner="None"
     
 board=Board()
@@ -259,8 +259,9 @@ class Player:
             clear()
         elif board.propertiesDict[self.position].owner!=(self and "None"):
             clear()
-            print board.propertiesDict[self.position].owner
-            print "You owe rent : "+board.propertiesDict[self.position].rent
+            print "You owe "+ board.propertiesDict[self.position].owner.name[:-1]+" rent : "+board.propertiesDict[self.position].rent+"$"
+            self.cash-=int(board.propertiesDict[self.position].rent)
+            board.propertiesDict[self.position].owner.cash+=int(board.propertiesDict[self.position].rent)
             print raw_input("Press enter to continue\n->")
         elif self.position==31:
             clear()
