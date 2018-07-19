@@ -135,7 +135,7 @@ class Board:
     def createPlayers(self):
         while True:
             try:
-                numPlayers=raw_input("Please input number of players\n->")
+                numPlayers=raw_input("Please input the number of players\n->")
                 for i in range(int(numPlayers)):
                     name=raw_input("Please enter your name, Player "+str(i+1)+"\n->")
                     self.players.append(Player(name,i+1))
@@ -177,6 +177,8 @@ class Player:
         self.getOutOfJailCard=False
         self.inJail=False
         self.turnsInJail=0
+        self.railroadsOwned=0
+        self.utilitiesOwned=0
     def presentOptions(self):
         board.printBoard()
         print "Your turn,"+self.name
@@ -237,10 +239,12 @@ class Player:
             else:
                 break
     def rollDice(self):
-        self.lastRoll=[random.randint(1, 6),random.randint(1, 6)]
-        return [8]#self.lastRoll
+        self.lastRoll=[12]#[random.randint(1, 6),random.randint(1, 6)]
+        return [12]#self.lastRoll
     def move(self,diceRoll):
+        clear()
         print "You rolled: "+str(diceRoll)
+        print raw_input("Press enter to continue\n->")
         self.position+=sum(diceRoll)
         self.position=self.position % 40
         self.hasMoved=True
@@ -259,10 +263,24 @@ class Player:
             clear()
         elif board.propertiesDict[self.position].owner!=(self and "None"):
             clear()
-            print "You owe "+ board.propertiesDict[self.position].owner.name[:-1]+" rent : "+board.propertiesDict[self.position].rent+"$"
-            self.cash-=int(board.propertiesDict[self.position].rent)
-            board.propertiesDict[self.position].owner.cash+=int(board.propertiesDict[self.position].rent)
-            print raw_input("Press enter to continue\n->")
+
+            if board.propertiesDict[self.position].rent=="**":
+                print "You owe "+ board.propertiesDict[self.position].owner.name[:-1]+" rent : "+str(25*board.propertiesDict[self.position].owner.railroadsOwned)+"$"
+                self.cash-=(25*board.propertiesDict[self.position].owner.railroadsOwned)
+                board.propertiesDict[self.position].owner.cash+=(25*board.propertiesDict[self.position].owner.railroadsOwned)
+            elif board.propertiesDict[self.position].rent=="*":
+                rent=0
+                if board.propertiesDict[self.position].owner.utilitiesOwned==1:
+                    rent=sum(self.lastRoll)*4
+                else:
+                    rent=sum(self.lastRoll)*10
+                print "You owe "+ board.propertiesDict[self.position].owner.name[:-1]+" rent : "+str(rent)+"$"
+                self.cash-=rent
+                board.propertiesDict[self.position].owner.cash+=rent              
+            else:# board.propertiesDict[self.position].rent != ("*" and "**"):
+                print "You owe "+ board.propertiesDict[self.position].owner.name[:-1]+" rent : "+board.propertiesDict[self.position].rent+"$"
+                self.cash-=int(board.propertiesDict[self.position].rent)
+                board.propertiesDict[self.position].owner.cash+=int(board.propertiesDict[self.position].rent)
         elif self.position==31:
             clear()
             print "You landed on Go To Jail, take a guess what happens next?"
@@ -288,6 +306,10 @@ class Player:
                         board.propertiesDict[self.position].owner=self
                         self.properties.append(board.propertiesDict[self.position].name)
                         self.cash-=int(board.propertiesDict[self.position].price)
+                        if board.propertiesDict[self.position].rent=="**":
+                            self.railroadsOwned+=1  
+                        if board.propertiesDict[self.position].rent=="*":
+                            self.utilitiesOwned+=1                                
                     else:
                         print "Sorry, you do not have the funds"
                 
