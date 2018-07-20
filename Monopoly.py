@@ -136,10 +136,15 @@ class Board:
         while True:
             try:
                 numPlayers=raw_input("Please input the number of players\n->")
+                names=[]
                 for i in range(int(numPlayers)):
-                    name=raw_input("Please enter your name, Player "+str(i+1)+"\n->")
-                    self.players.append(Player(name,i+1))
-                    #print self.players[i].name
+                    while True:
+                        name=raw_input("Please enter your name, Player "+str(i+1)+"\n->").rstrip("\r")
+                        if name not in names:
+                            self.players.append(Player(name,i+1))
+                            names.append(self.players[i].name)
+                            break
+                        
             except ValueError:
                 pass
             else:
@@ -265,7 +270,7 @@ class Player:
             clear()
 
             if board.propertiesDict[self.position].rent=="**":
-                print "You owe "+ board.propertiesDict[self.position].owner.name[:-1]+" rent : "+str(25*board.propertiesDict[self.position].owner.railroadsOwned)+"$"
+                print "You owe "+ board.propertiesDict[self.position].owner.name+" rent : "+str(25*board.propertiesDict[self.position].owner.railroadsOwned)+"$"
                 self.cash-=(25*board.propertiesDict[self.position].owner.railroadsOwned)
                 board.propertiesDict[self.position].owner.cash+=(25*board.propertiesDict[self.position].owner.railroadsOwned)
             elif board.propertiesDict[self.position].rent=="*":
@@ -274,11 +279,11 @@ class Player:
                     rent=sum(self.lastRoll)*4
                 else:
                     rent=sum(self.lastRoll)*10
-                print "You owe "+ board.propertiesDict[self.position].owner.name[:-1]+" rent : "+str(rent)+"$"
+                print "You owe "+ board.propertiesDict[self.position].owner.name+" rent : "+str(rent)+"$"
                 self.cash-=rent
                 board.propertiesDict[self.position].owner.cash+=rent              
             else:# board.propertiesDict[self.position].rent != ("*" and "**"):
-                print "You owe "+ board.propertiesDict[self.position].owner.name[:-1]+" rent : "+board.propertiesDict[self.position].rent+"$"
+                print "You owe "+ board.propertiesDict[self.position].owner.name+" rent : "+board.propertiesDict[self.position].rent+"$"
                 self.cash-=int(board.propertiesDict[self.position].rent)
                 board.propertiesDict[self.position].owner.cash+=int(board.propertiesDict[self.position].rent)
         elif self.position==31:
