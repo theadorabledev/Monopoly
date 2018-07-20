@@ -135,16 +135,19 @@ class Board:
     def createPlayers(self):
         while True:
             try:
-                numPlayers=raw_input("Please input the number of players\n->")
-                names=[]
-                for i in range(int(numPlayers)):
-                    while True:
-                        name=raw_input("Please enter your name, Player "+str(i+1)+"\n->").rstrip("\r")
-                        if name not in names:
-                            self.players.append(Player(name,i+1))
-                            names.append(self.players[i].name)
-                            break
-                        
+                numPlayers=raw_input("Please input the number of players(2-6)\n->")
+                
+                if int(numPlayers)<=6 and int(numPlayers)>=2:
+                    names=[]
+                    for i in range(int(numPlayers)):
+                        while True:
+                            name=raw_input("Please enter your name, Player "+str(i+1)+"\n->").rstrip("\r")
+                            if name not in names:
+                                self.players.append(Player(name,i+1))
+                                names.append(self.players[i].name)
+                                break
+                else:
+                    raise ValueError
             except ValueError:
                 pass
             else:
