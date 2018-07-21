@@ -247,13 +247,18 @@ class Player:
             else:
                 break
     def rollDice(self):
-        self.lastRoll=[12]#[random.randint(1, 6),random.randint(1, 6)]
-        return [12]#self.lastRoll
+        self.lastRoll=[random.randint(1, 6),random.randint(1, 6)]
+        return self.lastRoll
     def move(self,diceRoll):
         clear()
         print "You rolled: "+str(diceRoll)
-        print raw_input("Press enter to continue\n->")
+        raw_input("Press enter to continue\n->")
         self.position+=sum(diceRoll)
+        if self.position>=40:
+            clear()
+            print "You passed go! Collect 200 dollars!"
+            self.cash+=200
+            raw_input("Press enter to continue\n->")            
         self.position=self.position % 40
         self.hasMoved=True
         if self.position in [3,18,34]:
@@ -267,7 +272,7 @@ class Player:
         elif self.position==(5 or 39):
             clear()
             print "You owe the bank 200 dollars."
-            print raw_input("Press enter to continue\n->")
+            raw_input("Press enter to continue\n->")
             clear()
         elif board.propertiesDict[self.position].owner!=(self and "None"):
             clear()
@@ -295,7 +300,7 @@ class Player:
             self.position=11
             self.inJail=True
             self.turnsInJail=3
-            print raw_input("Press enter to continue\n->")
+            raw_input("Press enter to continue\n->")
     def buyProperty(self):
         try:
             if board.propertiesDict[self.position].price=="NA":
