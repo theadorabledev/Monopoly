@@ -1,140 +1,168 @@
 Mediterranean Ave.
 2
 60
-2
+2 
+30
 Purple
 Baltic Ave.
 4
 60
 4
+30
 Purple
 Oriental Ave.
 7
 100
 6
+50
 Light-Blue
 Vermont Ave.
 9
 100
 6
+50
 Light-Blue
 Connecticut Ave.
 10
 120
 8
+60
 Light-Blue
 St. Charles Place
 12
 140
 10
+70
 Violet
 States Ave.
 14
 140
 10
+70
 Violet
 Virginia Ave.
 15
 160
 12
+80
 Violet
 St. James Place
 17
 180
 14
+90
 Orange
 Tennessee Ave.
 19
 180
 14
+90
 Orange
 New York Ave.
 20
 200
 16
+100
 Orange
 Kentucky Ave.
 22
 220
 18
+110
 Red
 Indiana Ave.
 24
 220
 18
+110
 Red
 Illinois Ave.
 25
 240
 20
+120
 Red
 Atlantic Ave.
 27
 260
 22
+130
 Yellow
 Ventnor Ave.
 28
 260
 22
+130
 Yellow
 Marvin Gardens
 30
 280
 24
+140
 Yellow
 Pacific Ave.
 32
 300
 26
+150
 Dark-Green
 North Carolina Ave.
 33
 300
 26
+150
 Dark-Green
 Pennsylvania Ave.
 35
 320
 28
+160
 Dark-Green
 Park Place
 38
 350
 35
+175
 Dark-Blue
 Boardwalk
 40
 400
 50
+200
 Dark-Blue
 Electric Company
 13
 150
-*
+*   
+75
 Utilities
 Water Works
 29
 150
 *
+75
 Utilities
 Reading Railroad
 6
 200
 **
+100
 Railroad
 Pennsylvania Railroad
 16
 200
 **
+100
 Railroad
 B. & O. Railroad
 26
 200
 **
+100
 Railroad
 Short Line Railroad
 36
 200
 **
+100
 Railroad
