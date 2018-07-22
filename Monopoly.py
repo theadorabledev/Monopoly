@@ -1,6 +1,7 @@
 from colorama import Fore, Style, init
 from os import system, name
 import random
+import json
 
 class Card:
     def __init__(self,text,action):
@@ -22,7 +23,7 @@ class Card:
             player.position=11
             player.inJail=True
         elif self.action=="outJail":
-            player.inJail=False
+            #player.inJail=False
             player.getOutOfJailCard=True
         elif self.action=="IllinoisAve":
             player.position=25
@@ -58,10 +59,17 @@ class Board:
         self.communityCardsUsed=[]
         self.unpackCards()
     def unpackProperties(self):
-        propertiesTXT=open("Properties.txt","r")
-        propertiesLines=propertiesTXT.readlines()
-        for x in range(0,len(propertiesLines),6):
-            self.properties.append(Property(propertiesLines[x].rstrip("\n"), int(propertiesLines[x+1]), propertiesLines[x+2][:-1], propertiesLines[x+3][:-1],propertiesLines[x+4], propertiesLines[x+5]))
+        #propertiesTXT=open("Properties.txt","r")
+        #propertiesLines=propertiesTXT.readlines()
+        #for x in range(0,len(propertiesLines),6):
+        #    self.properties.append(Property(propertiesLines[x].rstrip("\n"), int(propertiesLines[x+1]), propertiesLines[x+2][:-1], propertiesLines[x+3][:-1],propertiesLines[x+4], propertiesLines[x+5]))
+        
+        propertiesJSON=open("Properties.json","r")
+        pJSON=json.loads(propertiesJSON.read())
+        for p in pJSON:
+            #name,position,price,rent,mortgage,group
+            #self.properties.append(Property(propertiesLines[x].rstrip("\n"), int(propertiesLines[x+1]), propertiesLines[x+2][:-1], propertiesLines[x+3][:-1],propertiesLines[x+4], propertiesLines[x+5]))
+            self.properties.append(Property(p["name"],p["position"],p["price"],p["rent"],p["mortgage"],p["group"]))
         self.properties.append(Property("Go",1,"NA","NA","NA","NA"))
         self.properties.append(Property("Income Tax",5,"NA","NA","NA","NA"))
         self.properties.append(Property("Jail",11,"NA","NA","NA","NA"))
@@ -107,17 +115,11 @@ class Board:
         colorRowList=[]
         for i in row:
             color=""
-            #print i
             if i !="    ":
                 boardPos=int(i[1:-1])
-                #print p.position, boardPos
-                #print i
                 for p in self.properties:
-                    
                     if int(p.position)==boardPos:
-                    
                         color=p.group
-            #print color,"Violet"
             if("Violet" in color):
                 colorRowList.append(Fore.MAGENTA+i+Style.RESET_ALL)
             elif("Dark-Green" in color):
@@ -168,13 +170,14 @@ class Board:
                 player.turnComplete=False
 
 class Property:
-    def __init__(self,name,position,price,rent,mortgage,group):
+    def __init__(self,name,position,price,rents,mortgage,group):
         self.name=name.rstrip("\n").rstrip("\r")
         self.position=int(position)
         self.price=price
-        self.rent=rent
+        self.rents=rents
+        self.rent=rents[0]
         self.mortgage=mortgage
-        self.group=group[:-1]
+        self.group=group
         self.owner="None"
         self.isMortgaged=False
     
@@ -187,6 +190,8 @@ class Player:
         self.cash=1500
         self.options=["Show All Player's Info", "Roll Dice And Move", "Buy Property", "Mortgage/Unmortgage Property","Show Board Positions","End Turn"]
         self.properties=[]
+        self.monopolies=[]
+        self.positionsOwned=[]
         self.position=1
         self.turnComplete=False
         self.hasMoved=False
@@ -210,6 +215,7 @@ class Player:
                         print player.name
                         print "Cash: "+str(player.cash)
                         print "Properties:"+str(player.properties)
+                        print "Monopolies: "+str(player.monopolies)
                         print "--"*6
                     raw_input("Press enter to continue\n->")
                     clear()
@@ -266,57 +272,69 @@ class Player:
         clear()
         print "You rolled: "+str(diceRoll)
         raw_input("Press enter to continue\n->")
-        self.position+=sum(diceRoll)
-        if self.position>=40:
-            clear()
-            print "You passed go! Collect 200 dollars!"
-            self.cash+=200
-            raw_input("Press enter to continue\n->")            
-        self.position=self.position % 40
-        self.hasMoved=True
-        if self.position in [3,18,34]:
-            print "You have picked up a community card!\n"
-            print board.communityCards[0].text
-            board.communityCardsUsed.append(board.communityCardsUsed[0])
-            board.communityCards.remove(board.communityCardsUsed[0])
-        elif self.position in [8,23,37]:#chance
-            print "You have picked up a chance card!\n"
-            print board.chanceCards[0].text
-            board.chanceCardsUsed.append(board.chanceCards[0])
-            board.chanceCards.remove(board.chanceCards[0])
-        elif self.position==(5 or 39):
-            clear()
-            print "You owe the bank 200 dollars."
-            raw_input("Press enter to continue\n->")
-            clear()
-        elif board.propertiesDict[self.position].owner!=(self and "None"):
-            if board.propertiesDict[self.position].isMortgaged==False:
+        if self.inJail==False:
+            self.position+=sum(diceRoll)
+            if self.position>=40:
                 clear()
-    
-                if board.propertiesDict[self.position].rent=="**":
-                    print "You owe "+ board.propertiesDict[self.position].owner.name+" rent : "+str(25*board.propertiesDict[self.position].owner.railroadsOwned)+"$"
-                    self.cash-=(25*board.propertiesDict[self.position].owner.railroadsOwned)
-                    board.propertiesDict[self.position].owner.cash+=(25*board.propertiesDict[self.position].owner.railroadsOwned)
-                elif board.propertiesDict[self.position].rent=="*":
-                    rent=0
-                    if board.propertiesDict[self.position].owner.utilitiesOwned==1:
-                        rent=sum(self.lastRoll)*4
-                    else:
-                        rent=sum(self.lastRoll)*10
-                    print "You owe "+ board.propertiesDict[self.position].owner.name+" rent : "+str(rent)+"$"
-                    self.cash-=rent
-                    board.propertiesDict[self.position].owner.cash+=rent              
-                else:# board.propertiesDict[self.position].rent != ("*" and "**"):
-                    print "You owe "+ board.propertiesDict[self.position].owner.name+" rent : "+board.propertiesDict[self.position].rent+"$"
-                    self.cash-=int(board.propertiesDict[self.position].rent)
-                    board.propertiesDict[self.position].owner.cash+=int(board.propertiesDict[self.position].rent)
-        elif self.position==31:
-            clear()
-            print "You landed on Go To Jail, take a guess what happens next?"
-            self.position=11
-            self.inJail=True
+                print "You passed go! Collect 200 dollars!"
+                self.cash+=200
+                raw_input("Press enter to continue\n->")            
+            self.position=self.position % 40
+            
+            if self.position in [3,18,34]:
+                print "You have picked up a community card!\n"
+                print board.communityCards[0].text
+                board.communityCardsUsed.append(board.communityCardsUsed[0])
+                board.communityCards.remove(board.communityCardsUsed[0])
+            elif self.position in [8,23,37]:#chance
+                print "You have picked up a chance card!\n"
+                print board.chanceCards[0].text
+                board.chanceCardsUsed.append(board.chanceCards[0])
+                board.chanceCards.remove(board.chanceCards[0])
+            elif self.position==(5 or 39):
+                clear()
+                print "You owe the bank 200 dollars."
+                raw_input("Press enter to continue\n->")
+                clear()
+            elif board.propertiesDict[self.position].owner!=(self and "None"):
+                if board.propertiesDict[self.position].isMortgaged==False:
+                    clear()
+        
+                    if board.propertiesDict[self.position].rent=="**":
+                        print "You owe "+ board.propertiesDict[self.position].owner.name+" rent : "+str(25*board.propertiesDict[self.position].owner.railroadsOwned)+"$"
+                        self.cash-=(25*board.propertiesDict[self.position].owner.railroadsOwned)
+                        board.propertiesDict[self.position].owner.cash+=(25*board.propertiesDict[self.position].owner.railroadsOwned)
+                    elif board.propertiesDict[self.position].rent=="*":
+                        rent=0
+                        if board.propertiesDict[self.position].owner.utilitiesOwned==1:
+                            rent=sum(self.lastRoll)*4
+                        else:
+                            rent=sum(self.lastRoll)*10
+                        print "You owe "+ board.propertiesDict[self.position].owner.name+" rent : "+str(rent)+"$"
+                        self.cash-=rent
+                        board.propertiesDict[self.position].owner.cash+=rent              
+                    else:# board.propertiesDict[self.position].rent != ("*" and "**"):
+                        print "You owe "+ board.propertiesDict[self.position].owner.name+" rent : "+board.propertiesDict[self.position].rent+"$"
+                        self.cash-=int(board.propertiesDict[self.position].rent)
+                        board.propertiesDict[self.position].owner.cash+=int(board.propertiesDict[self.position].rent)
+            elif self.position==31:
+                clear()
+                print "You landed on Go To Jail, take a guess what happens next?"
+                self.position=11
+                self.inJail=True
+                self.turnsInJail=3
+                raw_input("Press enter to continue\n->")
+        elif self.getOutOfJailCard==True:
+            print "You used your \"Get Out Of Jail Free\"-card!"
+            self.inJail=False
             self.turnsInJail=3
-            raw_input("Press enter to continue\n->")
+        else:
+            print "Sorry, you are in jail!"
+            self.turnsInJail-=1
+            if self.turnsInJail==0:
+                self.inJail=False
+                self.turnsInJail=3
+        self.hasMoved=True    
     def buyProperty(self):
         try:
             if board.propertiesDict[self.position].price=="NA":
@@ -339,7 +357,13 @@ class Player:
                         if board.propertiesDict[self.position].rent=="**":
                             self.railroadsOwned+=1  
                         if board.propertiesDict[self.position].rent=="*":
-                            self.utilitiesOwned+=1                                
+                            self.utilitiesOwned+=1   
+                        self.positionsOwned.append(self.position)
+                        if self.isMonopoly(board.propertiesDict[self.position].group):
+                            for p in board.properties:
+                                if p.group==board.propertiesDict[self.position].group:
+                                    p.rent=int(p.rent)*2
+                            self.monopolies.append(board.propertiesDict[self.position].group)
                     else:
                         print "Sorry, you do not have the funds"
                 
@@ -361,6 +385,12 @@ class Player:
                 if mortgage[0].upper()=="Y":
                     self.cash-=int(board.propertiesDict[self.position].mortgage)
                     board.propertiesDict[self.position].isMortgaged=False
+    def isMonopoly(self,group):
+        for p in board.properties:
+            if p.group==group:
+                if p.owner!=self:
+                    return False
+        return True
 def clear():
     if name == 'nt':
         _ = system('cls')
