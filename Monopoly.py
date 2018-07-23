@@ -59,30 +59,10 @@ class Board:
         self.communityCardsUsed=[]
         self.unpackCards()
     def unpackProperties(self):
-        #propertiesTXT=open("Properties.txt","r")
-        #propertiesLines=propertiesTXT.readlines()
-        #for x in range(0,len(propertiesLines),6):
-        #    self.properties.append(Property(propertiesLines[x].rstrip("\n"), int(propertiesLines[x+1]), propertiesLines[x+2][:-1], propertiesLines[x+3][:-1],propertiesLines[x+4], propertiesLines[x+5]))
-        
         propertiesJSON=open("Properties.json","r")
         pJSON=json.loads(propertiesJSON.read())
         for p in pJSON:
-            #name,position,price,rent,mortgage,group
-            #self.properties.append(Property(propertiesLines[x].rstrip("\n"), int(propertiesLines[x+1]), propertiesLines[x+2][:-1], propertiesLines[x+3][:-1],propertiesLines[x+4], propertiesLines[x+5]))
-            self.properties.append(Property(p["name"],p["position"],p["price"],p["rent"],p["mortgage"],p["group"]))
-        self.properties.append(Property("Go",1,"NA","NA","NA","NA"))
-        self.properties.append(Property("Income Tax",5,"NA","NA","NA","NA"))
-        self.properties.append(Property("Jail",11,"NA","NA","NA","NA"))
-        self.properties.append(Property("Free Parking",21,"NA","NA","NA","NA"))
-        self.properties.append(Property("Go To Jail",31,"NA","NA","NA","NA"))
-        self.properties.append(Property("Luxury Tax",39,"NA","NA","NA","NA"))
-        self.properties.append(Property("Community Chest 1",3,"NA","NA","NA","NA"))
-        self.properties.append(Property("Community Chest 2",18,"NA","NA","NA","NA"))
-        self.properties.append(Property("Community Chest 3",34,"NA","NA","NA","NA"))
-        self.properties.append(Property("Chance 1",8,"NA","NA","NA","NA"))
-        self.properties.append(Property("Chance 2",23,"NA","NA","NA","NA"))
-        self.properties.append(Property("Chance 3",37,"NA","NA","NA","NA"))
-
+            self.properties.append(Property(p["name"],p["position"],p["price"],p["rent"],p["mortgage"],p["housePrice"],p["group"]))
         for p in self.properties:
             self.propertiesDict[p.position]=p
     def unpackCards(self):
@@ -170,7 +150,7 @@ class Board:
                 player.turnComplete=False
 
 class Property:
-    def __init__(self,name,position,price,rents,mortgage,group):
+    def __init__(self,name,position,price,rents,mortgage,housePrice,group):
         self.name=name.rstrip("\n").rstrip("\r")
         self.position=int(position)
         self.price=price
@@ -180,6 +160,8 @@ class Property:
         self.group=group
         self.owner="None"
         self.isMortgaged=False
+        self.numHouses=0
+        self.housePrice=housePrice
     
 board=Board()
 class Player:
@@ -188,7 +170,7 @@ class Player:
         self.number=number
         self.color=""
         self.cash=1500
-        self.options=["Show All Player's Info", "Roll Dice And Move", "Buy Property", "Mortgage/Unmortgage Property","Show Board Positions","End Turn"]
+        self.options=["Show All Player's Info", "Roll Dice And Move", "Buy Property", "Mortgage/Unmortgage Property","Show Board Positions","Build Houses and Hotels","End Turn"]
         self.properties=[]
         self.monopolies=[]
         self.positionsOwned=[]
@@ -201,6 +183,7 @@ class Player:
         self.turnsInJail=0
         self.railroadsOwned=0
         self.utilitiesOwned=0
+        self.boughtHouseThisTurn=False
     def presentOptions(self):
         board.printBoard()
         print "Your turn,"+self.name
@@ -244,7 +227,7 @@ class Player:
                         print "Position: "+str(board.propertiesDict[position].position)
                         print "Name: "+board.propertiesDict[position].name
                         print "Price: "+board.propertiesDict[position].price
-                        print "Rent: "+board.propertiesDict[position].rent
+                        print "Rent: "+str(board.propertiesDict[position].rent)
                         print "Mortgage: "+board.propertiesDict[position].mortgage
                         print "Group: "+board.propertiesDict[position].group
                         if board.propertiesDict[position].owner==("None" or "NA"):
@@ -254,13 +237,21 @@ class Player:
                         print "----------------------------"
                     raw_input("Press enter to continue\n->")
                     clear()
-                elif(choice==6):#End Turn
+                elif(choice==6):    #Build Houses and Hotels
+                    clear()
+                    self.buildHouseOrHotel(board.propertiesDict[self.position])
+                    raw_input("Press enter to continue\n->")
+                    clear()
+                elif(choice==7):#End Turn
+                    
                     if self.hasMoved==True:
                         self.turnComplete=True  
                         self.hasMoved=False
-                        clear()
+                        self.boughtHouseThisTurn=False
+                    clear()
+                    
                 else:
-                    pass
+                    clear()
             except ValueError:
                 pass
             else:
@@ -391,14 +382,53 @@ class Player:
                 if p.owner!=self:
                     return False
         return True
+    def buildHouseOrHotel(self,theProperty):
+        if (theProperty.owner==self) and self.isMonopoly(theProperty.group) and (theProperty.numHouses<5) and (self.boughtHouseThisTurn==False):
+            print "Current Rent: "+str(theProperty.rent)
+            print "Rent After Purchase: "+str(theProperty.rents[theProperty.numHouses+1])
+            if theProperty.numHouses<4:
+                build=raw_input("Would you like to build a house for "+str(theProperty.housePrice)+" dollars on this property (y/n)?\n->")
+            else:
+                build=raw_input("Would you like to build a hotel for "+str(theProperty.housePrice)+" dollars on this property (y/n)?\n->")
+
+            if (build.upper()[0]=="Y") and (int(self.cash)>=int(theProperty.housePrice)):
+                self.boughtHouseThisTurn=True
+                self.cash-=int(theProperty.housePrice)
+                theProperty.numHouses+=1
+                theProperty.rent=theProperty.rents[theProperty.numHouses]
+            else:
+                print "Sorry, you lack the needed funds."
+        if theProperty.owner!=self:
+            print "Sorry, you don't own this property."
+        if theProperty.owner==self and self.isMonopoly(theProperty.group)==False:
+            print "Sorry, you don't own all the properties in this group"
+        if theProperty.owner==self and theProperty.numHouses>=5:
+            print "Sorry, you have maxed out the number of permissible builds on this spot."
+        if  theProperty.owner==self and self.boughtHouseThisTurn:
+            print "Sorry, you have already purchased a house or hotel this turn."
+            
 def clear():
     if name == 'nt':
         _ = system('cls')
     else:
         _ = system('clear')
         
+def printBanner():
+    f = open('banner.txt', 'r')
+    for line in f:
+        colorLine=[]
+        stripLine=line.rstrip("\n")
+        for i in stripLine:
+            if i=="_":
+                colorLine.append(Fore.GREEN+i+Style.RESET_ALL)
+            else: 
+                colorLine.append(Fore.RED+i+Style.RESET_ALL)
+        
+        print "".join(colorLine)
+    raw_input("Press enter to continue\n->")
 def main():
     init()
+    printBanner()
     board.createPlayers()
     clear()
     board.takeTurns()
